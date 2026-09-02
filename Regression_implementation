@@ -1,0 +1,393 @@
+# ==========================================
+# MULTIPLE LINEAR REGRESSION + L2
+# ==========================================
+
+# DATA
+
+area = [1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800]
+
+bedrooms = [2, 2, 3, 3, 3, 4, 4, 4, 5, 5]
+
+age = [10, 8, 12, 6, 9, 5, 7, 4, 3, 2]
+
+price = [55, 65, 78, 88, 98, 110, 121, 132, 145, 157]
+
+
+# ==========================================
+# HYPERPARAMETERS
+# ==========================================
+
+learning_rate = 0.01
+
+lambda_values = [
+    0.001,
+    0.89,
+    0.45,
+    0.46,
+    0.556,
+    0.667,
+    0.77,
+    0.864,
+    0.009,
+    1
+]
+
+
+# ==========================================
+# DATA SPLIT
+# ==========================================
+
+x1_train = area[:6]
+x1_validation = area[6:8]
+x1_test = area[8:]
+
+x2_train = bedrooms[:6]
+x2_validation = bedrooms[6:8]
+x2_test = bedrooms[8:]
+
+x3_train = age[:6]
+x3_validation = age[6:8]
+x3_test = age[8:]
+
+y_train = price[:6]
+y_validation = price[6:8]
+y_test = price[8:]
+
+
+# ==========================================
+# SCALING
+# IMPORTANT:
+# MIN/MAX COME ONLY FROM TRAINING DATA
+# ==========================================
+
+# Area
+
+area_min = min(x1_train)
+area_max = max(x1_train)
+
+x1_train_scaled = []
+x1_validation_scaled = []
+x1_test_scaled = []
+
+for x in x1_train:
+    scaled = (x - area_min) / (area_max - area_min)
+    x1_train_scaled.append(scaled)
+
+for x in x1_validation:
+    scaled = (x - area_min) / (area_max - area_min)
+    x1_validation_scaled.append(scaled)
+
+for x in x1_test:
+    scaled = (x - area_min) / (area_max - area_min)
+    x1_test_scaled.append(scaled)
+
+
+# Bedrooms
+
+bedrooms_min = min(x2_train)
+bedrooms_max = max(x2_train)
+
+x2_train_scaled = []
+x2_validation_scaled = []
+x2_test_scaled = []
+
+for x in x2_train:
+    scaled = (x - bedrooms_min) / (bedrooms_max - bedrooms_min)
+    x2_train_scaled.append(scaled)
+
+for x in x2_validation:
+    scaled = (x - bedrooms_min) / (bedrooms_max - bedrooms_min)
+    x2_validation_scaled.append(scaled)
+
+for x in x2_test:
+    scaled = (x - bedrooms_min) / (bedrooms_max - bedrooms_min)
+    x2_test_scaled.append(scaled)
+
+
+# Age
+
+age_min = min(x3_train)
+age_max = max(x3_train)
+
+x3_train_scaled = []
+x3_validation_scaled = []
+x3_test_scaled = []
+
+for x in x3_train:
+    scaled = (x - age_min) / (age_max - age_min)
+    x3_train_scaled.append(scaled)
+
+for x in x3_validation:
+    scaled = (x - age_min) / (age_max - age_min)
+    x3_validation_scaled.append(scaled)
+
+for x in x3_test:
+    scaled = (x - age_min) / (age_max - age_min)
+    x3_test_scaled.append(scaled)
+
+
+# ==========================================
+# BEST MODEL VARIABLES
+# ==========================================
+
+best_lambda = None
+
+best_validation_mse = float("inf")
+
+best_w1 = None
+best_w2 = None
+best_w3 = None
+best_c = None
+
+
+# ==========================================
+# TRY EVERY LAMBDA
+# ==========================================
+
+for lambda_value in lambda_values:
+
+    # Reset parameters
+
+    w1 = 1
+    w2 = 1
+    w3 = 1
+    c = 0
+
+
+    # ======================================
+    # GRADIENT DESCENT
+    # ======================================
+
+    for i in range(1000):
+
+        total_loss = 0
+
+        total_dw1 = 0
+        total_dw2 = 0
+        total_dw3 = 0
+        total_dc = 0
+
+
+        # ----------------------------------
+        # TRAINING
+        # ----------------------------------
+
+        for x1, x2, x3, actual in zip(
+            x1_train_scaled,
+            x2_train_scaled,
+            x3_train_scaled,
+            y_train
+        ):
+
+            # Prediction
+
+            prediction = (
+                w1*x1 +
+                w2*x2 +
+                w3*x3 +
+                c
+            )
+
+
+            # Error
+
+            error = actual - prediction
+
+
+            # Loss
+
+            loss = error**2
+
+
+            # Gradients with L2 regularisation
+
+            dw1 = -2*x1*error + 2*lambda_value*w1
+
+            dw2 = -2*x2*error + 2*lambda_value*w2
+
+            dw3 = -2*x3*error + 2*lambda_value*w3
+
+            dc = -2*error
+
+
+            # Accumulation
+
+            total_loss += loss
+
+            total_dw1 += dw1
+            total_dw2 += dw2
+            total_dw3 += dw3
+            total_dc += dc
+
+
+        # ----------------------------------
+        # AVERAGE
+        # ----------------------------------
+
+        mean_loss = total_loss / len(x1_train_scaled)
+
+        dw1 = total_dw1 / len(x1_train_scaled)
+
+        dw2 = total_dw2 / len(x1_train_scaled)
+
+        dw3 = total_dw3 / len(x1_train_scaled)
+
+        dc = total_dc / len(x1_train_scaled)
+
+
+        # ----------------------------------
+        # UPDATE
+        # ----------------------------------
+
+        w1 = w1 - learning_rate * dw1
+
+        w2 = w2 - learning_rate * dw2
+
+        w3 = w3 - learning_rate * dw3
+
+        c = c - learning_rate * dc
+
+
+    # ======================================
+    # VALIDATION
+    # ======================================
+
+    validation_total_loss = 0
+
+
+    for x1, x2, x3, actual in zip(
+        x1_validation_scaled,
+        x2_validation_scaled,
+        x3_validation_scaled,
+        y_validation
+    ):
+
+        prediction = (
+            w1*x1 +
+            w2*x2 +
+            w3*x3 +
+            c
+        )
+
+        error = actual - prediction
+
+        loss = error**2
+
+        validation_total_loss += loss
+
+
+    # Validation MSE
+
+    validation_mse = (
+        validation_total_loss /
+        len(x1_validation_scaled)
+    )
+
+
+    # ======================================
+    # PRINT LAMBDA RESULT
+    # ======================================
+
+    print(
+        "lambda:",
+        lambda_value,
+        "validation MSE:",
+        validation_mse
+    )
+
+
+    # ======================================
+    # SAVE BEST MODEL
+    # ======================================
+
+    if validation_mse < best_validation_mse:
+
+        best_validation_mse = validation_mse
+
+        best_lambda = lambda_value
+
+        best_w1 = w1
+        best_w2 = w2
+        best_w3 = w3
+        best_c = c
+
+
+# ==========================================
+# BEST MODEL
+# ==========================================
+
+print("\n==============================")
+print("BEST MODEL")
+print("==============================")
+
+print("Best lambda:", best_lambda)
+
+print(
+    "Best validation MSE:",
+    best_validation_mse
+)
+
+print("Best w1:", best_w1)
+
+print("Best w2:", best_w2)
+
+print("Best w3:", best_w3)
+
+print("Best c:", best_c)
+
+
+# ==========================================
+# FINAL TEST
+# ==========================================
+
+test_total_loss = 0
+
+
+for x1, x2, x3, actual in zip(
+    x1_test_scaled,
+    x2_test_scaled,
+    x3_test_scaled,
+    y_test
+):
+
+    # Use BEST model
+
+    prediction = (
+        best_w1*x1 +
+        best_w2*x2 +
+        best_w3*x3 +
+        best_c
+    )
+
+
+    # Error
+
+    error = actual - prediction
+
+
+    # Loss
+
+    loss = error**2
+
+
+    # Accumulate
+
+    test_total_loss += loss
+
+
+# ==========================================
+# TEST MSE
+# ==========================================
+
+test_mse = (
+    test_total_loss /
+    len(x1_test_scaled)
+)
+
+
+print("\n==============================")
+print("FINAL TEST")
+print("==============================")
+print("Error =",error)
+
+print("Test MSE:", test_mse)
